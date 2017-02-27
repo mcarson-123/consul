@@ -32,7 +32,9 @@ module Consul
       private
 
       def require_power_check(options = {})
-        if Rails.version.to_i < 4
+        if Rails.version.to_i >= 5
+          before_action :unchecked_power, options, raise: false
+        elsif Rails.version.to_i < 4
           before_filter :unchecked_power, options
         else
           before_action :unchecked_power, options
@@ -41,7 +43,9 @@ module Consul
 
       # This is badly named, since it doesn't actually skip the :check_power filter
       def skip_power_check(options = {})
-        if Rails.version.to_i < 4
+        if Rails.version.to_i >= 5
+          skip_before_action :unchecked_power, options, raise: false
+        elsif Rails.version.to_i < 4
           skip_before_filter :unchecked_power, options
         else
           skip_before_action :unchecked_power, options
@@ -50,12 +54,14 @@ module Consul
 
       def current_power(&initializer)
         self.current_power_initializer = initializer
-        if Rails.version.to_i < 4
+        if Rails.version.to_i >= 5
+          around_action :with_current_power
+        elsif Rails.version.to_i < 4
           around_filter :with_current_power
         else
           around_action :with_current_power
+          helper_method :current_power
         end
-        helper_method :current_power
       end
 
       def consul_guards
@@ -126,5 +132,5 @@ module Consul
     end
 
   end
-  
+
 end
